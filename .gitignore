@@ -1,0 +1,21 @@
+# Secrets & local environment files (NEVER commit secrets)
+.env
+.env.*
+*.pfx
+*.pem
+*.key
+*.publishsettings
+*.secret*
+secrets/
+
+# Azure / Bicep local outputs
+*.json.bak
+az-output.log
+
+# Node / Python / IDE
+node_modules/
+__pycache__/
+.venv/
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
