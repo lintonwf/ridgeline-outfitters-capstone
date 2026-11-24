@@ -1,0 +1,11 @@
+=== [NET-7] Front-End HTTP Response Check ===
+HTTP/1.1 200 OK
+accept-ranges: bytes
+content-length: 18630
+content-type: text/html; charset=utf-8
+etag: "d6viwpbm4ef4edi"
+last-modified: Tue, 07 Jan 2025 03:33:22 GMT
+server: Caddy
+vary: Accept-Encoding
+date: Tue, 24 Nov 2026 02:38:38 GMT
+

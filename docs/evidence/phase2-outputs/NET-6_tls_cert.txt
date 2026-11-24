@@ -1,0 +1,5 @@
+=== [NET-6] TLS Certificate & Expiration Check ===
+subject=C=US, ST=WA, L=Redmond, O=Microsoft Corporation, CN=proudflower-c1a593a0.westus3.azurecontainerapps.io
+issuer=C=US, O=Microsoft Corporation, CN=Microsoft TLS G2 RSA CA OCSP 04
+notBefore=Nov 23 16:00:11 2026 GMT
+notAfter=Mar  3 15:00:11 2027 GMT

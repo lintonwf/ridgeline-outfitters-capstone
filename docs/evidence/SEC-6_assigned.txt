@@ -1,0 +1,19 @@
+{
+  "condition": null,
+  "conditionVersion": null,
+  "createdBy": null,
+  "createdOn": "2026-11-24T22:11:04.999945+00:00",
+  "delegatedManagedIdentityResourceId": null,
+  "description": null,
+  "id": "/subscriptions/807a5de8-b27e-49fe-a0a1-1c4697edf580/resourceGroups/rg-ridgeline-prod-wus3/providers/Microsoft.Authorization/roleAssignments/6cf5a2c6-5234-4e70-b2c2-dd3c51374aaa",
+  "name": "6cf5a2c6-5234-4e70-b2c2-dd3c51374aaa",
+  "principalId": "26a4ea0c-44c6-4dcb-ad09-1b45b1c2f5ad",
+  "principalType": "User",
+  "resourceGroup": "rg-ridgeline-prod-wus3",
+  "roleDefinitionId": "/subscriptions/807a5de8-b27e-49fe-a0a1-1c4697edf580/providers/Microsoft.Authorization/roleDefinitions/acdd72a7-3385-48ef-bd42-f606fba81ae7",
+  "scope": "/subscriptions/807a5de8-b27e-49fe-a0a1-1c4697edf580/resourceGroups/rg-ridgeline-prod-wus3",
+  "systemData": null,
+  "type": "Microsoft.Authorization/roleAssignments",
+  "updatedBy": "26a4ea0c-44c6-4dcb-ad09-1b45b1c2f5ad",
+  "updatedOn": "2026-11-24T22:11:05.195947+00:00"
+}

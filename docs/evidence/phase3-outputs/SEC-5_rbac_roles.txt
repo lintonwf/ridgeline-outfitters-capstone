@@ -1,0 +1,9 @@
+=== [SEC-5] RBAC Role Assignments (Least Privilege & Single Owner) ===
+Principal                             Role                       Scope
+------------------------------------  -------------------------  ------------------------------------------------------------------------------------------------------------------------------------------------------
+lintonfeitosa@southern.edu            Owner                      /subscriptions/807a5de8-b27e-49fe-a0a1-1c4697edf580
+875b8b30-b63b-4bb9-b466-700d110d2727  Key Vault Secrets User     /subscriptions/807a5de8-b27e-49fe-a0a1-1c4697edf580/resourcegroups/rg-ridgeline-prod-wus3/providers/Microsoft.KeyVault/vaults/kv-ridgeline-prod-64hvdp
+lintonfeitosa@southern.edu            Website Contributor        /subscriptions/807a5de8-b27e-49fe-a0a1-1c4697edf580/resourceGroups/rg-ridgeline-prod-wus3
+scot@southern.edu                     Reader                     /subscriptions/807a5de8-b27e-49fe-a0a1-1c4697edf580/resourceGroups/rg-ridgeline-prod-wus3
+lintonfeitosa@southern.edu            Key Vault Secrets User     /subscriptions/807a5de8-b27e-49fe-a0a1-1c4697edf580/resourceGroups/rg-ridgeline-prod-wus3/providers/Microsoft.KeyVault/vaults/kv-ridgeline-prod-64hvdp
+365-dereks@southern0.onmicrosoft.com  User Access Administrator  /

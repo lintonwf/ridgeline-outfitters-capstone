@@ -1,0 +1,22 @@
+=== [NET-3] Check for Exposed Management Ports (22, 3389) ===
+--- Subnet: snet-proxy | NSG: nsg-proxy-ridgeline-prod-wus3 ---
+Name                              Priority    Direction    Access    Protocol    SourceAddr    DestPort
+--------------------------------  ----------  -----------  --------  ----------  ------------  ----------
+Allow-HTTPS-Inbound-Internet      100         Inbound      Allow     Tcp         Internet      443
+Allow-HTTP-Inbound-ACME-Redirect  110         Inbound      Allow     Tcp         Internet      80
+Deny-All-Inbound                  4096        Inbound      Deny      *           *             *
+--- Subnet: snet-web | NSG: nsg-web-ridgeline-prod-wus3 ---
+Name                    Priority    Direction    Access    Protocol    SourceAddr    DestPort
+----------------------  ----------  -----------  --------  ----------  ------------  ----------
+Allow-HTTPS-From-Proxy  100         Inbound      Allow     Tcp         10.0.0.0/24   443
+Deny-All-Inbound        4096        Inbound      Deny      *           *             *
+--- Subnet: snet-app | NSG: nsg-app-ridgeline-prod-wus3 ---
+Name                  Priority    Direction    Access    Protocol    SourceAddr    DestPort
+--------------------  ----------  -----------  --------  ----------  ------------  ----------
+Allow-HTTPS-From-Web  100         Inbound      Allow     Tcp         10.0.1.0/24   443
+Deny-All-Inbound      4096        Inbound      Deny      *           *             *
+--- Subnet: snet-data | NSG: nsg-data-ridgeline-prod-wus3 ---
+Name                 Priority    Direction    Access    Protocol    SourceAddr    DestPort
+-------------------  ----------  -----------  --------  ----------  ------------  ----------
+Allow-TSQL-From-App  100         Inbound      Allow     Tcp         10.0.2.0/24   1433
+Deny-All-Inbound     4096        Inbound      Deny      *           *             *

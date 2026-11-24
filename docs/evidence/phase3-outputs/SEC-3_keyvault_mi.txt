@@ -1,0 +1,10 @@
+=== [SEC-3] Key Vault Secrets & Managed Identity Access ===
+Name                      RbacEnabled    SoftDelete    PurgeProtection
+------------------------  -------------  ------------  -----------------
+kv-ridgeline-prod-64hvdp  True           True          True
+Name                 Enabled    Updated
+-------------------  ---------  -------------------------
+SqlConnectionString  True       2026-11-23T23:46:13+00:00
+Name                    ClientId                              PrincipalId
+----------------------  ------------------------------------  ------------------------------------
+id-ridgeline-prod-wus3  875b8b30-b63b-4bb9-b466-700d110d2727  561a0fce-cefa-4143-ae5d-ccf1db8108a8

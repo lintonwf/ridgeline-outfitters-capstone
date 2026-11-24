@@ -1,0 +1,16 @@
+=== [SEC-2] Encryption at Rest & In Transit ===
+--- Azure SQL Transparent Data Encryption (TDE) & TLS ---
+Name     ResourceGroup           ScanState    State
+-------  ----------------------  -----------  -------
+Current  rg-ridgeline-prod-wus3  Complete     Enabled
+Name                     MinTls    PublicNetworkAccess
+-----------------------  --------  ---------------------
+sql-ridgeline-prod-wus3  1.2       Disabled
+--- Storage Account Encryption & HTTPS-Only ---
+Name                   HttpsOnly    MinTls    EncryptionKeySource
+---------------------  -----------  --------  ---------------------
+stridgelineprod64hvdp  True         TLS1_2    Microsoft.Storage
+--- App Service HTTPS-Only & TLS ---
+Name                     HttpsOnly    MinTls
+-----------------------  -----------  --------
+app-ridgeline-prod-wus3  True         1.2

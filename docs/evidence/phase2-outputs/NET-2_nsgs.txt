@@ -1,0 +1,22 @@
+=== [NET-2] NSG Rules on Every Subnet ===
+--- Subnet: snet-proxy | NSG: nsg-proxy-ridgeline-prod-wus3 ---
+Name                              ResourceGroup           Priority    SourcePortRanges    SourceAddressPrefixes    SourceASG    Access    Protocol    Direction    DestinationPortRanges    DestinationAddressPrefixes    DestinationASG
+--------------------------------  ----------------------  ----------  ------------------  -----------------------  -----------  --------  ----------  -----------  -----------------------  ----------------------------  ----------------
+Allow-HTTPS-Inbound-Internet      rg-ridgeline-prod-wus3  100         *                   Internet                 None         Allow     Tcp         Inbound      443                      10.0.0.0/24                   None
+Allow-HTTP-Inbound-ACME-Redirect  rg-ridgeline-prod-wus3  110         *                   Internet                 None         Allow     Tcp         Inbound      80                       10.0.0.0/24                   None
+Deny-All-Inbound                  rg-ridgeline-prod-wus3  4096        *                   *                        None         Deny      *           Inbound      *                        *                             None
+--- Subnet: snet-web | NSG: nsg-web-ridgeline-prod-wus3 ---
+Name                    ResourceGroup           Priority    SourcePortRanges    SourceAddressPrefixes    SourceASG    Access    Protocol    Direction    DestinationPortRanges    DestinationAddressPrefixes    DestinationASG
+----------------------  ----------------------  ----------  ------------------  -----------------------  -----------  --------  ----------  -----------  -----------------------  ----------------------------  ----------------
+Allow-HTTPS-From-Proxy  rg-ridgeline-prod-wus3  100         *                   10.0.0.0/24              None         Allow     Tcp         Inbound      443                      10.0.1.0/24                   None
+Deny-All-Inbound        rg-ridgeline-prod-wus3  4096        *                   *                        None         Deny      *           Inbound      *                        *                             None
+--- Subnet: snet-app | NSG: nsg-app-ridgeline-prod-wus3 ---
+Name                  ResourceGroup           Priority    SourcePortRanges    SourceAddressPrefixes    SourceASG    Access    Protocol    Direction    DestinationPortRanges    DestinationAddressPrefixes    DestinationASG
+--------------------  ----------------------  ----------  ------------------  -----------------------  -----------  --------  ----------  -----------  -----------------------  ----------------------------  ----------------
+Allow-HTTPS-From-Web  rg-ridgeline-prod-wus3  100         *                   10.0.1.0/24              None         Allow     Tcp         Inbound      443                      10.0.2.0/24                   None
+Deny-All-Inbound      rg-ridgeline-prod-wus3  4096        *                   *                        None         Deny      *           Inbound      *                        *                             None
+--- Subnet: snet-data | NSG: nsg-data-ridgeline-prod-wus3 ---
+Name                 ResourceGroup           Priority    SourcePortRanges    SourceAddressPrefixes    SourceASG    Access    Protocol    Direction    DestinationPortRanges    DestinationAddressPrefixes    DestinationASG
+-------------------  ----------------------  ----------  ------------------  -----------------------  -----------  --------  ----------  -----------  -----------------------  ----------------------------  ----------------
+Allow-TSQL-From-App  rg-ridgeline-prod-wus3  100         *                   10.0.2.0/24              None         Allow     Tcp         Inbound      1433                     10.0.3.0/24                   None
+Deny-All-Inbound     rg-ridgeline-prod-wus3  4096        *                   *                        None         Deny      *           Inbound      *                        *                             None

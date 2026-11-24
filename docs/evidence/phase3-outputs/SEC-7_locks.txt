@@ -1,0 +1,5 @@
+=== [SEC-7] Resource Locks on SQL Database & Key Vault ===
+Level         Name                     Notes                                                                ResourceGroup
+------------  -----------------------  -------------------------------------------------------------------  ----------------------
+CanNotDelete  lock-sqldb-cannotdelete  SEC-7: Prevent accidental deletion of production Azure SQL Database  rg-ridgeline-prod-wus3
+CanNotDelete  lock-kv-cannotdelete     SEC-7: Prevent accidental deletion of production Key Vault           rg-ridgeline-prod-wus3

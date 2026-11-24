@@ -1,0 +1,10 @@
+=== [NET-5] Private DNS Zones & VNet Links ===
+ZoneName                          ResourceGroup           RecordSets    MaxRecordSets    VirtualNetworkLinks    MaxVirtualNetworkLinks    VirtualNetworkLinksWithRegistration    MaxVirtualNetworkLinksWithRegistration    ProvisioningState
+--------------------------------  ----------------------  ------------  ---------------  ---------------------  ------------------------  -------------------------------------  ----------------------------------------  -------------------
+privatelink.database.windows.net  rg-ridgeline-prod-wus3  2             25000            1                      1000                      0                                      100                                       Succeeded
+LinkName                       ResourceGroup           RegistrationEnabled    VirtualNetwork                                                                                                                                                  LinkState    ProvisioningState
+-----------------------------  ----------------------  ---------------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------  -----------  -------------------
+link-vnet-ridgeline-prod-wus3  rg-ridgeline-prod-wus3  False                  /subscriptions/807a5de8-b27e-49fe-a0a1-1c4697edf580/resourceGroups/rg-ridgeline-prod-wus3/providers/Microsoft.Network/virtualNetworks/vnet-ridgeline-prod-wus3  Completed    Succeeded
+Name                     ResourceGroup           Ttl    Type    AutoRegistered    Metadata
+-----------------------  ----------------------  -----  ------  ----------------  ------------------------------------------------------------------------------------------------------------------------
+sql-ridgeline-prod-wus3  rg-ridgeline-prod-wus3  10     A       False             creator="created by private endpoint pe-sql-ridgeline-prod-wus3 with resource guid a814037a-fb66-40d5-979b-5f40c0daf231"
