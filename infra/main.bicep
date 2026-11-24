@@ -33,13 +33,17 @@ param sqlAdminLogin string
 param sqlAdminPassword string
 
 @description('Container image for Caddy reverse proxy (NET-7)')
-param proxyImage string = 'caddy:2.8-alpine'
+// param proxyImage string = 'caddy:2.8-alpine'
+param proxyImage string = 'ghcr.io/lintonwf/ridgeline-proxy:v0.1.0'
 
 @description('Container image for backend API (ARC-5)')
 param apiImage string = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
 
 @description('Deployed application release version tag (AUT-7)')
 param appVersion string = 'v0.1.0'
+
+@description('Built-in policy definition ID for requiring a tag on resources (SEC-8)')
+param requireTagPolicyDefinitionId string = '/providers/Microsoft.Authorization/policyDefinitions/871b6d14-10aa-478d-b590-94f262ecfa99'
 
 var commonTags = {
   Owner: ownerName
@@ -122,6 +126,17 @@ module compute 'modules/compute.bicep' = {
   }
 }
 
+// 6. Governance: Azure Policy enforcing required CostCenter tag (ARC-9, SEC-8)
+module governance 'modules/governance.bicep' = {
+  name: 'deploy-governance'
+  params: {
+    suffix: suffix
+    policyDefinitionId: requireTagPolicyDefinitionId
+    requiredTagName: 'CostCenter'
+  }
+}
+
+output policyAssignmentName string = governance.outputs.policyAssignmentName
 output vnetId string = network.outputs.vnetId
 output webAppDefaultHostName string = compute.outputs.webAppDefaultHostName
 output proxyFqdn string = compute.outputs.proxyFqdn

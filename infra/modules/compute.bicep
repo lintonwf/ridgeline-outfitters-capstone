@@ -210,6 +210,10 @@ resource proxyContainerApp 'Microsoft.App/containerApps@2024-03-01' = {
               value: webApp.properties.defaultHostName
             }
             {
+              name: 'UPSTREAM_API_HOST'
+              value: apiContainerApp.properties.configuration.ingress.fqdn
+            }
+            {
               name: 'APP_VERSION'
               value: appVersion
             }

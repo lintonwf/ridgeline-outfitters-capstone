@@ -1,0 +1,36 @@
+{
+	# NET-6: Enforce HTTPS and TLS 1.2+
+	servers {
+		protocols h1 h2
+	}
+}
+
+:80 {
+	# NET-7: Reverse proxy / edge filtering layer in front of web and API tiers
+	log {
+		output stdout
+		format json
+	}
+
+	# Block common scanner/probe paths early at the edge (NET-7)
+	@blocked_paths path /.env* /.git* /wp-admin* /xmlrpc.php* /phpmyadmin*
+	respond @blocked_paths 403
+
+	# Route /api/* requests to the internal API Container App
+	handle_path /api/* {
+		reverse_proxy https://{$UPSTREAM_API_HOST} {
+			header_up Host {upstream_hostport}
+			header_up X-Forwarded-Proto {http.request.header.X-Forwarded-Proto}
+			header_up X-App-Version {$APP_VERSION}
+		}
+	}
+
+	# Route all remaining storefront traffic to Azure App Service web tier
+	handle {
+		reverse_proxy https://{$UPSTREAM_WEB_HOST} {
+			header_up Host {upstream_hostport}
+			header_up X-Forwarded-Proto {http.request.header.X-Forwarded-Proto}
+			header_up X-App-Version {$APP_VERSION}
+		}
+	}
+}
