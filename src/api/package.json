@@ -1,0 +1,13 @@
+{
+  "name": "ridgeline-outfitters-api",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Ridgeline Outfitters Backend API Tier (CPTR 445 Capstone)",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/api.test.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

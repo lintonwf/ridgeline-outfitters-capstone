@@ -1,0 +1,120 @@
+name: Ridgeline CI/CD Pipeline (AUT-2, AUT-3, AUT-4, AUT-7)
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  AZURE_RESOURCE_GROUP: rg-ridgeline-prod-wus3
+  AZURE_WEBAPP_NAME: app-ridgeline-prod-wus3
+  STAGING_SLOT_NAME: staging
+
+jobs:
+  build-and-test:
+    name: Build, Lint & Unit Test (AUT-2)
+    runs-on: ubuntu-latest
+    outputs:
+      release_version: ${{ steps.version.outputs.tag }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Resolve release version tag (AUT-7)
+        id: version
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          else
+            SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+            echo "tag=v0.2.0-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Secret hygiene scan (SEC-3)
+        run: |
+          if grep -rnE "Password=|AccountKey=|BEGIN PRIVATE KEY" src/ infra/ .github/ 2>/dev/null; then
+            echo "ERROR: Potential secret detected in repository!"
+            exit 1
+          fi
+
+      - name: Validate Bicep templates (AUT-1)
+        run: az bicep build --file infra/main.bicep
+
+      - name: Run Web Tier unit tests (AUT-2)
+        working-directory: src/web
+        run: npm test
+
+      - name: Run API Tier unit tests (AUT-2)
+        working-directory: src/api
+        run: npm test
+
+      - name: Package Web Tier deployment artifact
+        run: |
+          mkdir -p dist
+          zip -r dist/ridgeline-web.zip src/web -x "src/web/test/*"
+
+      - name: Upload Web Tier build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ridgeline-web-package
+          path: dist/ridgeline-web.zip
+
+  deploy-nonprod-staging:
+    name: Deploy to Non-Production Staging (AUT-3)
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ridgeline-web-package
+          path: dist
+
+      - name: Deploy to Staging Environment (AUT-3)
+        env:
+          AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+          RELEASE_TAG: ${{ needs.build-and-test.outputs.release_version }}
+        run: |
+          if [ -z "$AZURE_CREDENTIALS" ]; then
+            echo "AZURE_CREDENTIALS secret not configured (student Entra tenant SP restriction). Artifact validated for staging release $RELEASE_TAG."
+            exit 0
+          fi
+          echo "$AZURE_CREDENTIALS" > creds.json
+          az login --service-principal -u "$(jq -r .clientId creds.json)" -p "$(jq -r .clientSecret creds.json)" --tenant "$(jq -r .tenantId creds.json)"
+          rm -f creds.json
+          az webapp config appsettings set --resource-group "$AZURE_RESOURCE_GROUP" --name "$AZURE_WEBAPP_NAME" --slot "$STAGING_SLOT_NAME" --settings APP_VERSION="$RELEASE_TAG" ENVIRONMENT_NAME="Staging"
+          az webapp deploy --resource-group "$AZURE_RESOURCE_GROUP" --name "$AZURE_WEBAPP_NAME" --slot "$STAGING_SLOT_NAME" --src-path dist/ridgeline-web.zip --type zip
+
+  promote-to-production:
+    name: Promote Staging to Production via Blue-Green Swap (AUT-3, AUT-4)
+    needs: [build-and-test, deploy-nonprod-staging]
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Blue-Green Promotion to Production (AUT-4)
+        env:
+          AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+          RELEASE_TAG: ${{ needs.build-and-test.outputs.release_version }}
+        run: |
+          if [ -z "$AZURE_CREDENTIALS" ]; then
+            echo "AZURE_CREDENTIALS secret not configured. Run local promotion script for release $RELEASE_TAG and attach pipeline + deployment logs."
+            exit 0
+          fi
+          echo "$AZURE_CREDENTIALS" > creds.json
+          az login --service-principal -u "$(jq -r .clientId creds.json)" -p "$(jq -r .clientSecret creds.json)" --tenant "$(jq -r .tenantId creds.json)"
+          rm -f creds.json
+          az webapp deployment slot swap --resource-group "$AZURE_RESOURCE_GROUP" --name "$AZURE_WEBAPP_NAME" --slot "$STAGING_SLOT_NAME" --target-slot production
