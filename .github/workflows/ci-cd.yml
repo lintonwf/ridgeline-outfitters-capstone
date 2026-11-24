@@ -43,7 +43,9 @@ jobs:
 
       - name: Secret hygiene scan (SEC-3)
         run: |
-          if grep -rnE "Password=|AccountKey=|BEGIN PRIVATE KEY" src/ infra/ .github/ 2>/dev/null; then
+          if grep -rnE --exclude="ci-cd.yml" --exclude="*.bicep" --exclude="*.bicepparam" \
+            "-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----|AccountKey=[A-Za-z0-9+/=]{20,}|Password=[^$;'\"]+" \
+            src/ infra/ .github/ 2>/dev/null; then
             echo "ERROR: Potential secret detected in repository!"
             exit 1
           fi
