@@ -12,7 +12,6 @@ permissions:
   contents: read
 
 env:
-  AZURE_RESOURCE_GROUP: rg-ridgeline-prod-wus3
   STAGE_WEBAPP_NAME: app-ridgeline-stage-wus3
   PROD_WEBAPP_NAME: app-ridgeline-prod-wus3
 
@@ -30,10 +29,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '26'
-          cache: 'npm'
-          cache-dependency-path: |
-            src/web/package-lock.json
-            src/api/package-lock.json
 
       - name: Resolve release version tag (AUT-7)
         id: version
@@ -101,27 +96,17 @@ jobs:
           name: ridgeline-web-package
           path: dist
 
-      - name: Deploy to Staging Web App (AUT-3)
+      - name: Log staging release candidate
         env:
-          AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
           RELEASE_TAG: ${{ needs.build-and-test.outputs.release_version }}
-        run: |
-          if [ -z "$AZURE_CREDENTIALS" ]; then
-            echo "AZURE_CREDENTIALS secret not configured (student Entra tenant SP restriction). Artifact validated for staging release $RELEASE_TAG."
-            exit 0
-          fi
-          echo "$AZURE_CREDENTIALS" > creds.json
-          az login --service-principal -u "$(jq -r .clientId creds.json)" -p "$(jq -r .clientSecret creds.json)" --tenant "$(jq -r .tenantId creds.json)"
-          rm -f creds.json
-          az webapp config appsettings set \
-            --resource-group "$AZURE_RESOURCE_GROUP" \
-            --name "$STAGE_WEBAPP_NAME" \
-            --settings APP_VERSION="$RELEASE_TAG" ENVIRONMENT_NAME="Staging"
-          az webapp deploy \
-            --resource-group "$AZURE_RESOURCE_GROUP" \
-            --name "$STAGE_WEBAPP_NAME" \
-            --src-path dist/ridgeline-web.zip \
-            --type zip
+        run: echo "Deploying candidate release $RELEASE_TAG to ${{ env.STAGE_WEBAPP_NAME }}"
+
+      - name: Deploy to Staging Web App (AUT-3)
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.STAGE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_STAGE_PUBLISH_PROFILE }}
+          package: dist/ridgeline-web.zip
 
   promote-to-production:
     name: Promote Staging Release to Production (AUT-3, AUT-4)
@@ -136,24 +121,14 @@ jobs:
           name: ridgeline-web-package
           path: dist
 
-      - name: Promote Release to Production Web App (AUT-4)
+      - name: Log production release promotion
         env:
-          AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
           RELEASE_TAG: ${{ needs.build-and-test.outputs.release_version }}
-        run: |
-          if [ -z "$AZURE_CREDENTIALS" ]; then
-            echo "AZURE_CREDENTIALS secret not configured. Promote release $RELEASE_TAG via CLI or download artifact ridgeline-web-package."
-            exit 0
-          fi
-          echo "$AZURE_CREDENTIALS" > creds.json
-          az login --service-principal -u "$(jq -r .clientId creds.json)" -p "$(jq -r .clientSecret creds.json)" --tenant "$(jq -r .tenantId creds.json)"
-          rm -f creds.json
-          az webapp config appsettings set \
-            --resource-group "$AZURE_RESOURCE_GROUP" \
-            --name "$PROD_WEBAPP_NAME" \
-            --settings APP_VERSION="$RELEASE_TAG" ENVIRONMENT_NAME="Production"
-          az webapp deploy \
-            --resource-group "$AZURE_RESOURCE_GROUP" \
-            --name "$PROD_WEBAPP_NAME" \
-            --src-path dist/ridgeline-web.zip \
-            --type zip
+        run: echo "Promoting release $RELEASE_TAG from ${{ env.STAGE_WEBAPP_NAME }} to ${{ env.PROD_WEBAPP_NAME }}"
+
+      - name: Promote Release to Production Web App (AUT-4)
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.PROD_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_PROD_PUBLISH_PROFILE }}
+          package: dist/ridgeline-web.zip
