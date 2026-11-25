@@ -37,6 +37,12 @@ param appVersion string
 @description('Resource tags')
 param tags object
 
+@description('Environment display name (Production or Staging)')
+param environmentName string = 'Production'
+
+@description('Provision staging web app on the existing production App Service plan (AUT-3)')
+param deployStageWebApp bool = true
+
 // ARC-2: App Service Plan Basic B1 (Linux)
 resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   name: 'asp-${suffix}'
@@ -72,13 +78,66 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
     keyVaultReferenceIdentity: managedIdentityId
     siteConfig: {
       linuxFxVersion: 'NODE|26-lts'
+      use32BitWorkerProcess: false
       minTlsVersion: '1.2'
       ftpsState: 'Disabled'
       vnetRouteAllEnabled: true
       appSettings: [
         {
-          name: 'APP_VERSION'
-          value: appVersion
+          name: 'ENVIRONMENT_NAME'
+          value: environmentName
+        }
+        {
+          name: 'KEY_VAULT_URI'
+          value: keyVaultUri
+        }
+        {
+          name: 'AZURE_CLIENT_ID'
+          value: managedIdentityClientId
+        }
+        {
+          name: 'STORAGE_ACCOUNT_NAME'
+          value: storageAccountName
+        }
+      ]
+    }
+  }
+}
+
+// Existing production App Service plan for zero-extra-cost staging app hosting (AUT-3)
+resource prodAppServicePlan 'Microsoft.Web/serverfarms@2023-12-01' existing = {
+  name: 'asp-ridgeline-prod-wus3'
+}
+
+// AUT-3: Staging Web App on shared App Service plan (no extra B1 plan cost)
+resource stageWebApp 'Microsoft.Web/sites@2023-12-01' = if (deployStageWebApp) {
+  name: 'app-ridgeline-stage-wus3'
+  location: location
+  tags: union(tags, {
+    Environment: 'Staging'
+  })
+  kind: 'app,linux'
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${managedIdentityId}': {}
+    }
+  }
+  properties: {
+    serverFarmId: prodAppServicePlan.id
+    httpsOnly: true
+    virtualNetworkSubnetId: webSubnetId
+    keyVaultReferenceIdentity: managedIdentityId
+    siteConfig: {
+      linuxFxVersion: 'NODE|26-lts'
+      use32BitWorkerProcess: false
+      minTlsVersion: '1.2'
+      ftpsState: 'Disabled'
+      vnetRouteAllEnabled: true
+      appSettings: [
+        {
+          name: 'ENVIRONMENT_NAME'
+          value: 'Staging'
         }
         {
           name: 'KEY_VAULT_URI'

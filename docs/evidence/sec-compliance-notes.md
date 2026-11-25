@@ -37,3 +37,13 @@
 ## `SEC-9` Security Posture Management (Microsoft Defender for Cloud)
 * Microsoft Defender for Cloud (Foundational CSPM) is enabled on the subscription.
 * All **High-Severity** recommendations are either remediated directly or formally documented below with risk acceptance rationale if a remediation conflicts with the $50 student budget (e.g., paid Defender plans).
+
+## CI/CD Authentication & SCM Basic Auth Trade-Off (SEC-3, SEC-5)
+
+* **Student Tenant Constraint:** The university-managed Microsoft Entra ID tenant restricts student accounts from creating new App Registrations, Service Principals, or OIDC federated credentials (`az ad sp create-for-rbac` / `azure/login@v2`), preventing automated ARM-level login from GitHub Actions without tenant administrator intervention.
+* **Compensating Control & Trade-Off:** To enable automated CI/CD deployment without over-provisioning broad directory roles (`SEC-5`), SCM Basic Authentication publishing credentials were scoped and enabled on `app-ridgeline-stage-wus3` and `app-ridgeline-prod-wus3` solely to generate deployment publish profiles.
+* **Credential Hygiene (`SEC-3`):**
+  * Both `.PublishSettings` XML files are excluded via `.gitignore` (`*.PublishSettings`) and never committed to source control.
+  * Publish profile contents are stored exclusively in encrypted GitHub Actions repository secrets (`AZURE_STAGE_PUBLISH_PROFILE` and `AZURE_PROD_PUBLISH_PROFILE`).
+  * Automated repository secret scanning runs on every push and pull request in `.github/workflows/ci-cd.yml` to block accidental credential commits.
+  * In a non-restricted enterprise Entra tenant, these publish profiles would be replaced by passwordless OIDC federated credentials scoped to `Website Contributor` on `rg-ridgeline-prod-wus3`.

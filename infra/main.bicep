@@ -33,17 +33,19 @@ param sqlAdminLogin string
 param sqlAdminPassword string
 
 @description('Container image for Caddy reverse proxy (NET-7)')
-// param proxyImage string = 'caddy:2.8-alpine'
 param proxyImage string = 'ghcr.io/lintonwf/ridgeline-proxy:v0.1.0'
 
 @description('Container image for backend API (ARC-5)')
 param apiImage string = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
 
 @description('Deployed application release version tag (AUT-7)')
-param appVersion string = 'v0.1.0'
+param appVersion string = 'v0.2.0'
 
 @description('Built-in policy definition ID for requiring a tag on resources (SEC-8)')
 param requireTagPolicyDefinitionId string = '/providers/Microsoft.Authorization/policyDefinitions/871b6d14-10aa-478d-b590-94f262ecfa99'
+
+@description('Provision staging web app on the existing production App Service plan (AUT-3)')
+param deployStageWebApp bool = true
 
 var commonTags = {
   Owner: ownerName
@@ -123,6 +125,7 @@ module compute 'modules/compute.bicep' = {
     apiImage: apiImage
     appVersion: appVersion
     tags: commonTags
+    deployStageWebApp: deployStageWebApp
   }
 }
 

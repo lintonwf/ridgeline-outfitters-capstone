@@ -10,4 +10,4 @@ param projectName = 'CPTR445-Capstone'
 param sqlAdminLogin = 'ridgelineadmin'
 // Supply password securely via CLI (--parameters sqlAdminPassword=...) or Key Vault reference
 param sqlAdminPassword = readEnvironmentVariable('SQL_ADMIN_PASSWORD')
-param appVersion = 'v0.1.0'
+param appVersion = 'v0.2.0'

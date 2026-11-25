@@ -1,0 +1,32 @@
+[
+  {
+    "name": "APP_VERSION",
+    "slotSetting": false,
+    "value": "v0.2.1"
+  },
+  {
+    "name": "KEY_VAULT_URI",
+    "slotSetting": false,
+    "value": "https://kv-ridgeline-prod-64hvdp.vault.azure.net/"
+  },
+  {
+    "name": "AZURE_CLIENT_ID",
+    "slotSetting": false,
+    "value": "875b8b30-b63b-4bb9-b466-700d110d2727"
+  },
+  {
+    "name": "STORAGE_ACCOUNT_NAME",
+    "slotSetting": false,
+    "value": "stridgelineprod64hvdp"
+  },
+  {
+    "name": "ENVIRONMENT_NAME",
+    "slotSetting": false,
+    "value": "Production"
+  },
+  {
+    "name": "API_INTERNAL_HOST",
+    "slotSetting": false,
+    "value": "ca-api-ridgeline-prod-wus3.internal.proudflower-c1a593a0.westus3.azurecontainerapps.io"
+  }
+]
