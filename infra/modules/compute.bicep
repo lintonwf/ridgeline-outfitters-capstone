@@ -71,7 +71,7 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
     virtualNetworkSubnetId: webSubnetId
     keyVaultReferenceIdentity: managedIdentityId
     siteConfig: {
-      linuxFxVersion: 'NODE|20-lts'
+      linuxFxVersion: 'NODE|26-lts'
       minTlsVersion: '1.2'
       ftpsState: 'Disabled'
       vnetRouteAllEnabled: true

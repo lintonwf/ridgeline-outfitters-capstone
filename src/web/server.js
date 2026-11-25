@@ -78,7 +78,7 @@ function renderHtml(catalogData) {
   <title>Ridgeline Outfitters | Outdoor Gear Storefront</title>
   <style>
     body { font-family: system-ui, -apple-system, sans-serif; margin: 0; background: #f4f6f4; color: #1f2923; }
-    header { background: #1e3f2b; color: #ffffff; padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+    header { background: red; color: #ffffff; padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center; }
     .badge { background: #3b6e4c; padding: 0.3rem 0.7rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; }
     main { max-width: 920px; margin: 2rem auto; background: #ffffff; padding: 1.75rem; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
     table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
