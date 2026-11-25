@@ -13,8 +13,8 @@ permissions:
 
 env:
   AZURE_RESOURCE_GROUP: rg-ridgeline-prod-wus3
-  AZURE_WEBAPP_NAME: app-ridgeline-prod-wus3
-  STAGING_SLOT_NAME: staging
+  STAGE_WEBAPP_NAME: app-ridgeline-stage-wus3
+  PROD_WEBAPP_NAME: app-ridgeline-prod-wus3
 
 jobs:
   build-and-test:
@@ -26,10 +26,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 20
+      - name: Setup Node.js 26
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '26'
+          cache: 'npm'
+          cache-dependency-path: |
+            src/web/package-lock.json
+            src/api/package-lock.json
 
       - name: Resolve release version tag (AUT-7)
         id: version
@@ -55,16 +59,28 @@ jobs:
 
       - name: Run Web Tier unit tests (AUT-2)
         working-directory: src/web
-        run: npm test
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci --no-audit --no-fund
+          else
+            npm install --no-audit --no-fund
+          fi
+          npm test
 
       - name: Run API Tier unit tests (AUT-2)
         working-directory: src/api
-        run: npm test
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci --no-audit --no-fund
+          else
+            npm install --no-audit --no-fund
+          fi
+          npm test
 
       - name: Package Web Tier deployment artifact
         run: |
           mkdir -p dist
-          zip -r dist/ridgeline-web.zip src/web -x "src/web/test/*"
+          (cd src/web && zip -r ../../dist/ridgeline-web.zip package.json server.js)
 
       - name: Upload Web Tier build artifact
         uses: actions/upload-artifact@v4
@@ -85,7 +101,7 @@ jobs:
           name: ridgeline-web-package
           path: dist
 
-      - name: Deploy to Staging Environment (AUT-3)
+      - name: Deploy to Staging Web App (AUT-3)
         env:
           AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
           RELEASE_TAG: ${{ needs.build-and-test.outputs.release_version }}
@@ -97,26 +113,47 @@ jobs:
           echo "$AZURE_CREDENTIALS" > creds.json
           az login --service-principal -u "$(jq -r .clientId creds.json)" -p "$(jq -r .clientSecret creds.json)" --tenant "$(jq -r .tenantId creds.json)"
           rm -f creds.json
-          az webapp config appsettings set --resource-group "$AZURE_RESOURCE_GROUP" --name "$AZURE_WEBAPP_NAME" --slot "$STAGING_SLOT_NAME" --settings APP_VERSION="$RELEASE_TAG" ENVIRONMENT_NAME="Staging"
-          az webapp deploy --resource-group "$AZURE_RESOURCE_GROUP" --name "$AZURE_WEBAPP_NAME" --slot "$STAGING_SLOT_NAME" --src-path dist/ridgeline-web.zip --type zip
+          az webapp config appsettings set \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --name "$STAGE_WEBAPP_NAME" \
+            --settings APP_VERSION="$RELEASE_TAG" ENVIRONMENT_NAME="Staging"
+          az webapp deploy \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --name "$STAGE_WEBAPP_NAME" \
+            --src-path dist/ridgeline-web.zip \
+            --type zip
 
   promote-to-production:
-    name: Promote Staging to Production via Blue-Green Swap (AUT-3, AUT-4)
+    name: Promote Staging Release to Production (AUT-3, AUT-4)
     needs: [build-and-test, deploy-nonprod-staging]
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - name: Blue-Green Promotion to Production (AUT-4)
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ridgeline-web-package
+          path: dist
+
+      - name: Promote Release to Production Web App (AUT-4)
         env:
           AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
           RELEASE_TAG: ${{ needs.build-and-test.outputs.release_version }}
         run: |
           if [ -z "$AZURE_CREDENTIALS" ]; then
-            echo "AZURE_CREDENTIALS secret not configured. Run local promotion script for release $RELEASE_TAG and attach pipeline + deployment logs."
+            echo "AZURE_CREDENTIALS secret not configured. Promote release $RELEASE_TAG via CLI or download artifact ridgeline-web-package."
             exit 0
           fi
           echo "$AZURE_CREDENTIALS" > creds.json
           az login --service-principal -u "$(jq -r .clientId creds.json)" -p "$(jq -r .clientSecret creds.json)" --tenant "$(jq -r .tenantId creds.json)"
           rm -f creds.json
-          az webapp deployment slot swap --resource-group "$AZURE_RESOURCE_GROUP" --name "$AZURE_WEBAPP_NAME" --slot "$STAGING_SLOT_NAME" --target-slot production
+          az webapp config appsettings set \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --name "$PROD_WEBAPP_NAME" \
+            --settings APP_VERSION="$RELEASE_TAG" ENVIRONMENT_NAME="Production"
+          az webapp deploy \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --name "$PROD_WEBAPP_NAME" \
+            --src-path dist/ridgeline-web.zip \
+            --type zip

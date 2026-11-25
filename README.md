@@ -1,65 +1,45 @@
-# Ridgeline Outfitters — Cloud Infrastructure & Application (CPTR 445 Capstone)
+# Ridgeline Outfitters — Cloud Infrastructure & Storefront (CPTR 445 Capstone)
 
-## Project Overview
-Production-ready, multi-tier e-commerce web application built on Microsoft Azure for **Ridgeline Outfitters**, designed to stay within a **$50/month** budget while meeting availability, network segmentation, security, and disaster recovery targets.
+Milestone 2 ("Build Complete") implementation for **Ridgeline Outfitters**, deploying a multi-tier cloud architecture on Microsoft Azure in `westus3` using Infrastructure-as-Code (Bicep and Azure CLI) within a $50/month budget.
 
-## Architecture Summary
-* **Primary / Secondary Regions (`ARC-6`):** `westus3` (Primary) / `westus` (Paired Secondary)
-* **Edge / Filtering Layer (`ARC-1`, `ARC-5`, `NET-7`):** Caddy Reverse Proxy on Azure Container Apps (`snet-proxy`)
-* **Web Tier (`ARC-2`):** Azure App Service (`B1`, 2 instances) with regional VNet integration (`snet-web`)
-* **Application / API Tier (`ARC-5`):** Serverless API on Azure Container Apps (`snet-app`)
-* **Data Tier (`ARC-3`, `NET-5`):** Azure SQL Database (`Basic`, 5 DTUs) with public access disabled, accessed via Private Endpoint (`snet-data`) and Private DNS (`privatelink.database.windows.net`)
-* **Storage Tier (`ARC-4`):** Azure Storage Account (`Standard_LRS`, `Hot` tier) for static web assets
-* **Identity & Secrets (`SEC-3`, `SEC-7`):** Azure Key Vault with RBAC authorization, `CanNotDelete` resource locks, and User-Assigned Managed Identity
+## Architecture Overview
+* **Primary Region:** West US 3 (`westus3`)
+* **Networking:** Hub-and-spoke VNet (`10.0.0.0/16`) segmented into `/24` subnets with default-deny NSGs, Private DNS zones, and HTTPS/TLS 1.2+ enforcement
+* **Compute:** Azure App Service (`app-ridgeline-prod-wus3` and staging app `app-ridgeline-stage-wus3` on `asp-ridgeline-prod-wus3`) serving the storefront web tier, paired with Azure Container Apps (`ca-api-ridgeline-prod-wus3`, `ca-proxy-ridgeline-prod-wus3`) for API/proxy workloads
+* **Data & Secrets:** Azure SQL Database (`sqldb-ridgeline-prod-wus3`) with Private Endpoint and TDE, Azure Storage (`stridgelineprod64hvdp`) with LRS and HTTPS-only, and Azure Key Vault (`kv-ridgeline-prod-64hvdp`) with RBAC and User-Assigned Managed Identity (`id-ridgeline-prod-wus3`)
+* **Governance & Security:** Azure Policy (`CostCenter` tag enforcement), resource locks (`CanNotDelete` on critical resources), least-privilege RBAC roles, and Microsoft Defender for Cloud (Foundational CSPM)
 
-## Repository Organization
+## Repository Structure
 ```text
-.
+├── .github/workflows/ci-cd.yml   # Automated validation, secret scan, unit tests & release workflow
+├── docs/
+│   ├── evidence/                 # Labeled verification scripts, CLI outputs & screenshots
+│   ├── phase4-rollout-patching.md# Rollout strategy, patching schedule & rollback notes
+│   └── sec-compliance-notes.md   # Security, RBAC, key management & compliance notes
 ├── infra/
-│   ├── main.bicep                  # Root orchestration template (AUT-1)
-│   ├── main.bicepparam             # Production parameter file
-│   └── modules/
-│       ├── network.bicep           # VNet, 4 subnets, default-deny NSGs (NET-1, NET-2, NET-4)
-│       ├── security.bicep          # Managed Identity, Key Vault, Locks (SEC-2, SEC-3, SEC-7)
-│       ├── storage.bicep           # Storage Account Hot/LRS (ARC-4, SEC-2)
-│       ├── database.bicep          # Azure SQL, Private Endpoint, Private DNS, Lock (ARC-3, NET-5, SEC-7)
-│       └── compute.bicep           # App Service (2x B1) & Container Apps Proxy/API (ARC-2, ARC-5, NET-6, NET-7)
-├── src/
-│   ├── web/                        # Storefront web frontend (to be added in Phase 4)
-│   ├── api/                        # Backend REST API (to be added in Phase 4)
-│   └── proxy/                      # Caddyfile & container config (to be added in Phase 2/4)
-├── .github/
-│   └── workflows/                  # CI/CD pipelines (to be added in Phase 4)
-└── docs/
-    └── evidence/                   # Requirement-labeled verification artifacts
+│   ├── main.bicep                # Root IaC orchestration template
+│   ├── main.bicepparam           # Environment parameters (CostCenter, naming, etc.)
+│   └── modules/                  # Modular Bicep templates (network, compute, database, security, governance)
+└── src/
+    ├── web/                      # Node.js storefront web app & unit tests
+    └── api/                      # Node.js backend API service, Dockerfile & unit tests
 ```
 
-## Naming & Tagging Standard (`ARC-9`)
-* **Naming Convention:** `<resource-type>-<app-name>-<environment>-<region>` (or compact alphanumeric for Storage/Key Vault)
-* **Required Tags:** `Owner`, `Environment`, `CostCenter`, `Project`
+## Quick Start & Deployment
+1. **Run Unit Tests Locally:**
+   ```bash
+   cd src/web && npm test
+   cd ../api && npm test
+   ```
+2. **Deploy Infrastructure (Bicep):**
+   ```bash
+   export SQL_ADMIN_PASSWORD='<YourStrongPassword>'
+   az deployment group create      --resource-group rg-ridgeline-prod-wus3      --template-file infra/main.bicep      --parameters infra/main.bicepparam
+   ```
+3. **Deploy Web Application & Verify Version:**
+   ```bash
+   curl -sS https://app-ridgeline-prod-wus3.azurewebsites.net/health
+   ```
 
-## Deployment Instructions (`AUT-1`)
-```bash
-# 1. Log in and select your subscription
-az login
-az account set --subscription "<YOUR_SUBSCRIPTION_ID>"
-
-# 2. Create the target resource group
-az group create --name rg-ridgeline-prod-wus3 --location westus3 \
-  --tags Owner="<Your Name>" Environment="Production" CostCenter="RO-IT-001" Project="CPTR445-Capstone"
-
-# 3. Validate (what-if) and deploy into the empty resource group
-az deployment group what-if \
-  --resource-group rg-ridgeline-prod-wus3 \
-  --template-file infra/main.bicep \
-  --parameters infra/main.bicepparam
-
-az deployment group create \
-  --resource-group rg-ridgeline-prod-wus3 \
-  --template-file infra/main.bicep \
-  --parameters infra/main.bicepparam
-```
-
-## AI Tools Disclosure
-In accordance with course guidelines:
-* **Google AI Pro & GitHub Copilot (Student):** Used to scaffold modular Bicep templates, GitHub Actions workflows, application boilerplate, and documentation structure. All architecture decisions, security rules, credentials, and live Azure verification steps were authored and validated by the student.
+## AI Tools & Assistance Disclosure
+This project was developed with assistance from **VS Code**, **GitHub Copilot**, and **Google AI** (Gemini) for Bicep authoring, troubleshooting CLI/policy/runtime errors, generating unit tests and documentation, and organizing verification evidence. All configurations, deployments, and security/cost decisions were reviewed and verified against project requirements.
