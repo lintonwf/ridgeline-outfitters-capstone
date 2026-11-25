@@ -13,10 +13,18 @@
 
 | Component | Cloud Provider (Microsoft Azure) Responsibility | Student / Operator Responsibility |
 | :--- | :--- | :--- |
-| **Azure App Service (`app-ridgeline-prod-wus3`)** | Underlying host OS, hypervisor, and managed `NODE|20-lts` runtime patching. | Application code dependencies, runtime version selection (`NODE|20-lts`), and app configuration. |
-| **Azure Container Apps (`ca-proxy`, `ca-api`)** | Underlying Kubernetes/Envoy control plane, host OS, and serverless fabric patching. | Rebuilding and redeploying container base images (`node:20-alpine`, `caddy:2.8-alpine`) on schedule. |
-| **Azure SQL Database (`sqldb-ridgeline-prod-wus3`)** | SQL engine patches, OS updates, TDE platform keys, and automated backup infrastructure. | Database schema/index maintenance, firewall/Private Endpoint rules, and credential rotation in Key Vault. |
-| **Azure Storage & VNet/NSGs** | Storage fabric, physical hardware, and software-defined networking infrastructure. | NSG rule hygiene, TLS certificate monitoring, and access policy reviews. |
+| **App Service Plan & Web Apps (`asp-ridgeline-prod-wus3`, `app-ridgeline-prod-wus3`, `app-ridgeline-stage-wus3`)** | Underlying host OS, hypervisor, and managed `NODE|26-lts` runtime patching. | Application code (`src/web`), `npm` dependencies, 64-bit worker/runtime settings, and promotion via `.github/workflows/ci-cd.yml`. |
+| **Container Apps (`ca-proxy-ridgeline-prod-wus3`, `ca-api-ridgeline-prod-wus3`)** | Underlying managed environment fabric, host OS, and container platform patching. | Rebuilding and redeploying custom container images (`ghcr.io/lintonwf/ridgeline-proxy:v0.1.0` and API image) and environment variables during the maintenance window. |
+| **Azure SQL Database (`sql-ridgeline-prod-wus3`, `sqldb-ridgeline-prod-wus3`)** | SQL engine patches, OS updates, TDE platform encryption keys, and automated backup infrastructure. | Schema/index maintenance, Private Endpoint/DNS configuration, and rotating credentials/secrets in Key Vault. |
+| **Azure Key Vault & Managed Identity (`kv-ridgeline-prod-64hvdp`, `id-ridgeline-prod-wus3`)** | Underlying Key Vault HSM/service availability and managed identity infrastructure. | RBAC role assignments (`Key Vault Secrets User`), secret lifecycle management, and `CanNotDelete` resource lock hygiene. |
+| **Azure Storage & VNet/NSGs (`stridgelineprod64hvdp`, `vnet-ridgeline-prod-wus3`)** | Storage fabric, physical hardware, and software-defined networking infrastructure. | NSG rule hygiene, custom/private DNS records, TLS certificate monitoring, and `CostCenter` policy compliance. |
+
+### Student Patching Cadence & Execution Steps (`AUT-5`)
+* **Cadence & Window:** Student-managed application dependencies (`package.json` / `package-lock.json`) and custom container images (`ca-proxy-ridgeline-prod-wus3`, `ca-api-ridgeline-prod-wus3`) are reviewed weekly and applied during the **Sundays, 02:00 – 04:00 UTC (Saturday 21:00 – 23:00 EST)** maintenance window (or out-of-band for critical CVEs).
+* **Execution & Verification:**
+  1. Audit dependencies (`npm audit`) and pull updated base/application images during the maintenance window.
+  2. Deploy and smoke-test (`/health` and `/version`) on `app-ridgeline-stage-wus3` before promoting to `app-ridgeline-prod-wus3` via `.github/workflows/ci-cd.yml`.
+  3. Confirm runtime/version headers and save patching/deployment logs under `docs/evidence/` for `AUT-5` traceability.
 
 ## `AUT-6` Pre-Change Snapshot & Rollback Procedure
 1. **Pre-Change Snapshot / Backup:**
@@ -32,7 +40,6 @@
   3. Structured JSON application logs on startup and health checks
 
 ## Environment Promotion & CI/CD Execution Model (AUT-2, AUT-3, AUT-4, AUT-7)
-
 * **Non-Production Staging Architecture (`AUT-3`):** Because Azure App Service deployment slots require a Standard (`S1`) or higher plan that would exceed the $50/month project budget, non-production validation is implemented via a dedicated staging web app (`app-ridgeline-stage-wus3`) hosted on the existing Basic `B1` App Service Plan (`asp-ridgeline-prod-wus3`) at **$0** additional compute cost.
 * **Automated Build, Staging Deploy & Production Promotion (`AUT-2`, `AUT-4`):**
   1. Every push or pull request to `main` (and any `v*` release tag) triggers `.github/workflows/ci-cd.yml`, executing secret hygiene scans, `az bicep build` validation, and Node.js 26 unit tests for both `src/web` and `src/api`.
