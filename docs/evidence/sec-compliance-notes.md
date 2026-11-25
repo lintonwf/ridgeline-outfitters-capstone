@@ -38,18 +38,8 @@
 * Microsoft Defender for Cloud (Foundational CSPM) is enabled on the subscription.
 * All **High-Severity** recommendations are either remediated directly or formally documented below with risk acceptance rationale if a remediation conflicts with the $50 student budget (e.g., paid Defender plans).
 
-## HTTPS Enforcement & TLS Certificate Lifecycle Monitoring (NET-6)
-* **Transport Encryption Enforcement:** HTTPS-only access (`httpsOnly: true`, `minTlsVersion: '1.2'`) is enforced across `app-ridgeline-prod-wus3`, `app-ridgeline-stage-wus3`, `ca-proxy-ridgeline-prod-wus3` (`allowInsecure: false`), `stridgelineprod64hvdp` (`supportsHttpsTrafficOnly: true`), and `sql-ridgeline-prod-wus3` (`minimalTlsVersion: '1.2'`).
-* **Active TLS Certificate Details (`ridgelineoutfitters.mooo.com`):**
-  * **Subject / CN:** `ridgelineoutfitters.mooo.com`
-  * **Issuer:** `C=US, O=DigiCert Inc, OU=www.digicert.com, CN=GeoTrust TLS RSA CA G1`
-  * **Valid From (`notBefore`):** `Nov 24 00:00:00 2026 GMT`
-  * **Expiration Date (`notAfter`):** `May 24 23:59:59 2027 GMT` (verified via `openssl s_client`)
-* **Renewal & Expiry Monitoring:**
-  * Platform-managed TLS certificates renew automatically prior to expiration without manual key rotation.
-  * Proactive endpoint and certificate health monitoring is configured via Azure Monitor alert rule `alert-net6-webapp-tls-health` on `app-ridgeline-prod-wus3` (with email notification via Action Group), supplemented by periodic `openssl` expiration verification.
-
 ## CI/CD Authentication & SCM Basic Auth Trade-Off (SEC-3, SEC-5)
+
 * **Student Tenant Constraint:** The university-managed Microsoft Entra ID tenant restricts student accounts from creating new App Registrations, Service Principals, or OIDC federated credentials (`az ad sp create-for-rbac` / `azure/login@v2`), preventing automated ARM-level login from GitHub Actions without tenant administrator intervention.
 * **Compensating Control & Trade-Off:** To enable automated CI/CD deployment without over-provisioning broad directory roles (`SEC-5`), SCM Basic Authentication publishing credentials were scoped and enabled on `app-ridgeline-stage-wus3` and `app-ridgeline-prod-wus3` solely to generate deployment publish profiles.
 * **Credential Hygiene (`SEC-3`):**
