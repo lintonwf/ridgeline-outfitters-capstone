@@ -6,7 +6,14 @@ const API_HOST = process.env.API_INTERNAL_HOST || '';
 const STORAGE_ACCOUNT = process.env.STORAGE_ACCOUNT_NAME || 'stridgelineprod64hvdp';
 
 function getAppVersion() {
-  return process.env.APP_VERSION || 'v0.2.0';
+  if (process.env.APP_VERSION) {
+    return process.env.APP_VERSION;
+  }
+  try {
+    return require('./version.json').version || 'v0.2.0';
+  } catch {
+    return 'v0.2.0';
+  }
 }
 
 function getEnvironment() {

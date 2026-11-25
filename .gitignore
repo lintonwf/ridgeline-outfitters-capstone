@@ -19,3 +19,6 @@ __pycache__/
 .DS_Store
 .vscode/*
 !.vscode/extensions.json
+
+# Versioning
+src/web/version.json
